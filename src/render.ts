@@ -16,6 +16,8 @@ export interface RenderOptions {
   mascot?: boolean;
   /** Replaces "tokens" in the header and tooltips (e.g. "prompts"). */
   unit?: string;
+  /** Replaces "the last year" in the header, e.g. "2026". */
+  period?: string;
 }
 
 const CELL = 10;
@@ -38,8 +40,8 @@ const TEXT = {
   en: {
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     weekdays: ['Mon', 'Wed', 'Fri'],
-    summary: (n: string, metric: Metric, days: number, unit?: string) =>
-      `${n} ${unit ?? (metric === 'total' ? 'tokens' : metric + ' tokens')} in the last ${days === 365 ? 'year' : days + ' days'}`,
+    summary: (n: string, metric: Metric, days: number, unit?: string, period?: string) =>
+      `${n} ${unit ?? (metric === 'total' ? 'tokens' : metric + ' tokens')} in ${period ?? `the last ${days === 365 ? 'year' : days + ' days'}`}`,
     footer: (s: Stats) =>
       `${s.activeDays} active days · longest streak ${s.longestStreak} · current streak ${s.currentStreak}`,
     less: 'Less',
@@ -49,8 +51,8 @@ const TEXT = {
   ko: {
     months: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
     weekdays: ['월', '수', '금'],
-    summary: (n: string, metric: Metric, days: number, unit?: string) =>
-      `최근 ${days === 365 ? '1년' : days + '일'} ${unit ?? (metric === 'total' ? '' : metric + ' ') + '토큰'} ${n}`,
+    summary: (n: string, metric: Metric, days: number, unit?: string, period?: string) =>
+      `${period ? period + '년' : `최근 ${days === 365 ? '1년' : days + '일'}`} ${unit ?? (metric === 'total' ? '' : metric + ' ') + '토큰'} ${n}`,
     footer: (s: Stats) => `활동 ${s.activeDays}일 · 최장 연속 ${s.longestStreak}일 · 현재 연속 ${s.currentStreak}일`,
     less: '적음',
     more: '많음',
@@ -127,14 +129,14 @@ export function renderSvg(values: ReadonlyMap<DayKey, number>, opts: RenderOptio
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="hm-title hm-desc">`,
   );
   parts.push(`<title id="hm-title">${escapeXml(opts.title ?? 'Claude Code')}</title>`);
-  parts.push(`<desc id="hm-desc">${escapeXml(t.summary(compact(s.total), metric, days, opts.unit))}. ${escapeXml(t.footer(s))}</desc>`);
+  parts.push(`<desc id="hm-desc">${escapeXml(t.summary(compact(s.total), metric, days, opts.unit, opts.period))}. ${escapeXml(t.footer(s))}</desc>`);
   parts.push(`<style>${styles(opts.theme ?? 'auto')}</style>`);
 
   // Header: mascot, title, total.
   // Centre the mascot on the title's x-height (baseline 19, cap height ~10).
   if (showMascot) parts.push(mascotSvg(0, 14 - (MASCOT_ROWS * PIXEL) / 2));
   parts.push(`<text class="t" x="${titleX}" y="19">${escapeXml(opts.title ?? 'Claude Code')}</text>`);
-  parts.push(`<text class="m" x="${width}" y="19" text-anchor="end">${escapeXml(t.summary(compact(s.total), metric, days, opts.unit))}</text>`);
+  parts.push(`<text class="m" x="${width}" y="19" text-anchor="end">${escapeXml(t.summary(compact(s.total), metric, days, opts.unit, opts.period))}</text>`);
 
   // Month and weekday labels.
   let lastLabelX = -Infinity;

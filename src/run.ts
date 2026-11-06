@@ -35,6 +35,8 @@ Options
       --prompts          Also draw prompts-per-day and top-projects charts from
                          history.jsonl, which reaches back further than transcripts
                          (writes claude-prompts.svg and claude-projects.svg)
+      --years            Also write one chart per calendar year, Jan 1 to Dec 31 (or to today),
+                         as claude-hitmap-<year>.svg (and claude-prompts-<year>.svg with --prompts)
       --top <n>          Projects in the projects chart (default: 8)
       --no-mascot        Leave out the pixel mascot
       --full             Rescan every transcript, not only those changed since the last run
@@ -99,6 +101,7 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         title: { type: 'string', default: 'Claude Code' },
         prompts: { type: 'boolean', default: false },
         top: { type: 'string', default: '8' },
+        years: { type: 'boolean', default: false },
         'no-mascot': { type: 'boolean', default: false },
         full: { type: 'boolean', default: false },
         push: { type: 'boolean', default: false },
@@ -179,6 +182,33 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
       await writeFile(join(outDir, 'claude-projects.svg'), renderProjects(best, { theme, lang, mascot, total: [...h.projects.values()].reduce((a, b) => a + b, 0) }), 'utf8');
       extra.push('claude-prompts.svg', 'claude-projects.svg');
       io.out(`History: ${[...h.days.values()].reduce((a, b) => a + b, 0)} prompts on ${h.days.size} days, ${h.projects.size} projects.\n`);
+    }
+
+    // Calendar-year views, like GitHub's year picker: Jan 1 to Dec 31, or to today for this year.
+    if (values.years) {
+      const history = values.prompts ? await collectHistory(dirs, timeZone) : undefined;
+      const yearsSeen = new Set<number>([Number(end.slice(0, 4))]);
+      for (const k of [...Object.keys(ledger.days), ...(history ? [...history.days.keys()] : [])]) yearsSeen.add(Number(k.slice(0, 4)));
+      const MS_DAY = 86_400_000;
+      for (const year of [...yearsSeen].sort((a, b) => a - b)) {
+        const yEnd = `${year}-12-31` < end ? `${year}-12-31` : end;
+        const yDays = Math.round((Date.parse(`${yEnd}T00:00:00Z`) - Date.parse(`${year}-01-01T00:00:00Z`)) / MS_DAY) + 1;
+        const common = { end: yEnd, days: yDays, theme, lang, mascot: !values['no-mascot'], period: String(year) } as const;
+        const files: [string, string][] = [
+          [`claude-hitmap-${year}.svg`, renderSvg(values_, { ...common, metric, title: values.title })],
+        ];
+        if (history) {
+          files.push([
+            `claude-prompts-${year}.svg`,
+            renderSvg(history.days, { ...common, title: lang === 'ko' ? 'Claude Code 프롬프트' : 'Claude Code prompts', unit: lang === 'ko' ? '프롬프트' : 'prompts' }),
+          ]);
+        }
+        for (const [name, body] of files) {
+          await writeFile(join(outDir, name), body, 'utf8');
+          extra.push(name);
+        }
+      }
+      io.out(`Years: ${[...yearsSeen].sort().join(', ')}\n`);
     }
 
     const s = stats(values_, end, days);

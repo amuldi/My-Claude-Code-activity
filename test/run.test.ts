@@ -65,3 +65,13 @@ test('prints help and version', async () => {
   assert.equal(await run(['-v'], v.io), 0);
   assert.match(v.out.join(''), /^\d+\.\d+\.\d+/);
 });
+
+test('--years writes one chart per calendar year, ending today for the current year', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'hitmap-'));
+  const t = io('2026-03-10T12:00:00Z');
+  assert.equal(await run(['--claude-dir', FIXTURE, '--out', dir, '--tz', 'UTC', '--years', '--prompts'], t.io), 0, t.err.join(''));
+  const svg = await readFile(join(dir, 'claude-hitmap-2026.svg'), 'utf8');
+  assert.match(svg, /1\.1K tokens in 2026/);
+  assert.equal((svg.match(/<rect class="l\d" x="\d+" y="\d+" width="10" height="10" rx="2"><title>/g) ?? []).length, 69);
+  await readFile(join(dir, 'claude-prompts-2026.svg'), 'utf8');
+});
