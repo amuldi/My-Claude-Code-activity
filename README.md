@@ -1,82 +1,83 @@
-# My Claude Code activity
+# Claude Code activity for your README
 
-내가 Claude Code로 얼마나, 무엇을 작업했는지 보여주는 GitHub 잔디 스타일 대시보드입니다.
-[ClaudeCode_HitMap](https://github.com/amuldi/ClaudeCode_HitMap)이 내 컴퓨터의 Claude Code 기록을 세어 이 저장소의 이미지를 갱신합니다.
+내 **Claude Code 사용 기록을 GitHub 잔디처럼** 프로필 README에 넣는 방법을 안내하는 저장소입니다.
+누구나 자기 컴퓨터에서 한 번 실행하면, 자기 README에 아래 같은 이미지를 넣을 수 있습니다.
 
-## 토큰 사용량
+- 🟧 **토큰 잔디** — 연도별(1월~12월)로 하루에 쓴 토큰
+- 🟧 **프롬프트 잔디** — 연도별로 하루에 보낸 프롬프트 수
+- 📊 **프로젝트 막대** — 가장 많이 작업한 프로젝트
 
-하루에 Claude Code가 처리한 토큰(입력·출력·캐시 포함)입니다. 진할수록 많이 쓴 날입니다.
+이미지를 만드는 도구는 [ClaudeCode_HitMap](https://github.com/amuldi/ClaudeCode_HitMap)입니다. 실제로 쓴 모습은 [amuldi/Hello-World](https://github.com/amuldi/Hello-World)의 README 맨 아래에서 볼 수 있습니다.
 
-![Claude Code token heatmap](claude-hitmap.svg)
+> 이 저장소에는 제 기록을 올리지 않습니다. 각자 **자기 저장소**에 자기 기록을 올립니다.
 
-> Claude Code는 대화 기록을 30일 뒤에 지웁니다. 그래서 토큰 기록은 10월 초부터만 남아 있고, 그 이후로는 `claude-hitmap.json`에 날짜별로 쌓아 두어 지워져도 사라지지 않습니다.
+## 왜 직접 실행해야 하나요?
 
-## 프롬프트 수 (전체 기간)
+Claude Code의 사용 기록은 서버가 아니라 **내 컴퓨터(`~/.claude`)에만** 있습니다. 그래서 URL만 넣으면 뜨는 방식은 불가능하고, 내 컴퓨터에서 이미지를 만들어 내 저장소에 올린 뒤 README가 그 이미지를 가리키게 합니다.
 
-내가 Claude Code에 보낸 프롬프트 수입니다. 프롬프트 기록은 더 오래 남아 있어서 3월부터 전체가 보입니다.
+## 따라 하기
 
-![Claude Code prompts heatmap](claude-prompts.svg)
+필요한 것: **Node 18.17 이상**, **git**, Claude Code를 쓴 기록, 이미지를 올릴 GitHub 저장소(프로필 README 저장소 `<내아이디>/<내아이디>`가 가장 간단합니다).
 
-## 작업한 프로젝트
-
-프롬프트를 가장 많이 보낸 프로젝트 폴더입니다.
-
-![Projects](claude-projects.svg)
-
-## 연도별로 보기
-
-GitHub처럼 달력 연도(1월 1일~12월 31일)마다 따로 봅니다. 새 해가 되면 그 해 이미지가 자동으로 추가됩니다.
-
-<details open>
-<summary><b>2026</b></summary>
-
-![2026 tokens](claude-hitmap-2026.svg)
-
-![2026 prompts](claude-prompts-2026.svg)
-
-</details>
-
-## 내 잔디 만들기
-
-내 컴퓨터에서 한 번 실행하면 됩니다. 필요한 것은 Node 18.17 이상과 Claude Code를 쓴 기록(`~/.claude`)뿐입니다.
+### 1. 설치
 
 ```bash
-# 1. 설치
 npm install -g github:amuldi/ClaudeCode_HitMap
-
-# 2. 이미지를 둘 저장소(이 저장소처럼)를 만들어 clone 한 뒤, 그 폴더에서 실행
-cd ~/code/My-Claude-Code-activity
-cc-hitmap --prompts --years --push
 ```
 
-`claude-hitmap.svg`, `claude-prompts.svg`, `claude-projects.svg`, `claude-hitmap.json`이 만들어지고 `--push`가 커밋·푸시까지 합니다.
+### 2. 내 저장소에서 이미지 만들고 올리기
 
-### README에 넣기
+```bash
+git clone https://github.com/<내아이디>/<내아이디>
+cd <내아이디>
+cc-hitmap --out claude-activity --prompts --years --push
+```
+
+`claude-activity/` 폴더에 이런 파일이 생기고, `--push`가 커밋·푸시까지 합니다.
+
+| 파일 | 내용 |
+|---|---|
+| `claude-hitmap-2026.svg` | 2026년 토큰 잔디 |
+| `claude-prompts-2026.svg` | 2026년 프롬프트 잔디 |
+| `claude-projects.svg` | 프로젝트별 막대 |
+| `claude-hitmap.json` | 날짜별 숫자 장부 (지우지 마세요) |
+
+연도마다 파일이 따로 생깁니다. 새 해가 되면 `claude-hitmap-2027.svg`가 자동으로 추가됩니다.
+
+### 3. README에 넣기
+
+저장소 안에 있는 파일이라 상대 경로로 넣으면 됩니다.
 
 ```markdown
-![Claude Code HitMap](https://raw.githubusercontent.com/<내아이디>/<저장소>/main/claude-hitmap.svg)
+## 🤖 Claude Code Activity
+
+![Claude Code tokens in 2026](claude-activity/claude-hitmap-2026.svg)
+
+![Claude Code prompts in 2026](claude-activity/claude-prompts-2026.svg)
+
+![Projects](claude-activity/claude-projects.svg)
 ```
 
-프로필 README(`<내아이디>/<내아이디>` 저장소)에 넣으면 프로필 첫 화면에 잔디가 뜹니다. 이미지는 보는 사람의 라이트/다크 모드를 자동으로 따라갑니다.
+가운데 정렬이 필요하면 HTML로 감쌉니다.
 
-### 자주 쓰는 옵션
+```html
+<div align="center">
+<img src="claude-activity/claude-hitmap-2026.svg" alt="Claude Code tokens in 2026" />
+</div>
+```
 
-| 옵션 | 설명 |
-|---|---|
-| `--prompts` | 프롬프트 수 잔디와 프로젝트 막대도 그립니다 |
-| `--years` | 연도별 이미지(`claude-hitmap-2026.svg` 등)도 그립니다 |
-| `--top 12` | 프로젝트 막대에 12개까지 보여줍니다 |
-| `--days 120` | 최근 120일만 보여줍니다 (기본 365) |
-| `--lang ko` | 한글로 표기합니다 |
-| `--metric output` | 출력 토큰만 셉니다 |
-| `--theme dark` | 다크 모드로 고정합니다 |
-| `--no-mascot` | 마스코트를 뺍니다 |
+이미지는 보는 사람의 라이트/다크 모드를 자동으로 따라갑니다.
 
-전체 옵션은 [ClaudeCode_HitMap 문서](https://github.com/amuldi/ClaudeCode_HitMap#옵션)에 있습니다.
+### 4. 갱신하기
 
-### 자동으로 갱신하기
+새 활동을 반영하려면 같은 명령을 다시 실행합니다.
 
-`~/.claude/settings.json`에 훅을 추가하면 Claude Code 세션이 끝날 때마다 이미지가 갱신됩니다.
+```bash
+cd <내아이디>
+cc-hitmap --out claude-activity --prompts --years --push
+```
+
+세션이 끝날 때마다 자동으로 하려면 `~/.claude/settings.json`에 훅을 추가합니다.
 
 ```json
 {
@@ -84,7 +85,7 @@ cc-hitmap --prompts --years --push
     "SessionEnd": [
       {
         "hooks": [
-          { "type": "command", "command": "cc-hitmap --out ~/code/My-Claude-Code-activity --prompts --years --push >/dev/null 2>&1 &" }
+          { "type": "command", "command": "cd ~/code/<내아이디> && cc-hitmap --out claude-activity --prompts --years --push >/dev/null 2>&1 &" }
         ]
       }
     ]
@@ -92,6 +93,25 @@ cc-hitmap --prompts --years --push
 }
 ```
 
-## 개인정보
+## 자주 쓰는 옵션
 
-저장소에는 날짜별 숫자(토큰·프롬프트 수)와 프로젝트 폴더 이름만 올라갑니다. 프롬프트 내용과 코드는 읽지도 올리지도 않습니다. 프로젝트 이름을 공개하고 싶지 않다면 `--prompts` 없이 실행하세요.
+| 옵션 | 설명 |
+|---|---|
+| `--years` | 달력 연도별 잔디를 그립니다 (이 가이드의 기본) |
+| `--prompts` | 프롬프트 수 잔디와 프로젝트 막대도 그립니다 |
+| `--top 12` | 프로젝트 막대에 12개까지 보여줍니다 (기본 8) |
+| `--lang ko` | 한글로 표기합니다 |
+| `--metric output` | 출력 토큰만 셉니다 (`total` · `output` · `input`) |
+| `--theme dark` | 다크 모드로 고정합니다 (기본은 자동) |
+| `--no-mascot` | 마스코트를 뺍니다 |
+| `--tz Asia/Seoul` | 하루를 자르는 시간대 |
+
+전체 옵션과 집계 방식은 [ClaudeCode_HitMap 문서](https://github.com/amuldi/ClaudeCode_HitMap)에 있습니다.
+
+## 알아 두세요
+
+- **토큰 기록은 설치한 날부터 쌓입니다.** Claude Code가 대화 기록을 30일 뒤에 지우기 때문에, 설치 전 30일보다 오래된 토큰은 되살릴 수 없습니다. 한 번 세어 둔 날은 장부에 남아 사라지지 않습니다.
+- **프롬프트 기록은 더 오래 남아 있어** 과거 몇 달치가 바로 채워집니다.
+- **개인정보:** 저장소에는 날짜별 숫자와 프로젝트 **폴더 이름**만 올라갑니다. 프롬프트 내용과 코드는 읽지도 올리지도 않습니다. 프로젝트 이름을 공개하고 싶지 않다면 `--prompts` 없이 실행하세요 (프로젝트 막대와 프롬프트 잔디가 빠집니다).
+- 컴퓨터가 여러 대라면 각자 다른 장부를 만듭니다. 합치는 기능은 아직 없습니다.
+- 비공식 도구이며 Anthropic과 관련이 없습니다.
