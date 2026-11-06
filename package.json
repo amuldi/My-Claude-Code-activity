@@ -1,0 +1,41 @@
+{
+  "name": "claude-code-hitmap",
+  "version": "0.1.0",
+  "description": "GitHub-style contribution heatmap of your Claude Code token usage, rendered as an SVG you can embed in any README.",
+  "type": "module",
+  "bin": {
+    "cc-hitmap": "dist/src/cli.js"
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/src"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "claude-code",
+    "heatmap",
+    "contribution-graph",
+    "github-readme",
+    "svg",
+    "cli"
+  ],
+  "author": "Sihun Jeon (https://github.com/amuldi)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amuldi/ClaudeCode_HitMap.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  }
+}
