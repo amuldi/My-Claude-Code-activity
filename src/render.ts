@@ -1,6 +1,6 @@
 import { buildCalendar, stats, type Calendar, type Stats } from './calendar.js';
 import { MASCOT, MASCOT_COLS, MASCOT_ROWS } from './mascot.js';
-import type { DayKey, Metric } from './types.js';
+import type { DayKey, LimitHits, Metric } from './types.js';
 
 export type Theme = 'auto' | 'light' | 'dark';
 export type Lang = 'en' | 'ko';
@@ -90,7 +90,7 @@ function styles(theme: Theme): string {
       `.m{fill:${p.muted}}`,
       ...p.levels.map((c, i) => `.l${i}{fill:${c}}`),
     ].join('');
-  const base = `text{font-family:${font}}.t{font-size:14px;font-weight:600}.s,.m{font-size:11px}.mascot{fill:${MASCOT_COLOR}}`;
+  const base = `text{font-family:${font}}.t{font-size:14px;font-weight:600}.s,.m{font-size:11px}.v{font-size:22px;font-weight:700}.k{font-size:11px}.mascot{fill:${MASCOT_COLOR}}`;
   if (theme === 'light') return base + rules(PALETTE.light);
   if (theme === 'dark') return base + rules(PALETTE.dark);
   return base + rules(PALETTE.light) + `@media (prefers-color-scheme:dark){${rules(PALETTE.dark)}}`;
@@ -221,6 +221,129 @@ export function renderProjects(items: readonly (readonly [string, number])[], op
     parts.push(`<rect class="l${n === max ? 4 : 3}" x="${NAME_W}" y="${y + 2}" width="${w}" height="12" rx="2"><title>${escapeXml(name)}: ${n} ${escapeXml(unit)}</title></rect>`);
     parts.push(`<text class="m" x="${NAME_W + w + 6}" y="${y + 12}">${n}</text>`);
   });
+  parts.push('</svg>');
+  return parts.join('') + '\n';
+}
+
+export interface LimitsOptions {
+  /** Last day of the period (YYYY-MM-DD). */
+  end: DayKey;
+  /** Show Jan–Dec of this year instead of the last 12 months. */
+  year?: number;
+  plan?: string;
+  theme?: Theme;
+  lang?: Lang;
+  title?: string;
+  mascot?: boolean;
+}
+
+const LIMIT_TEXT = {
+  en: {
+    title: 'Plan & limits',
+    plan: 'Plan',
+    unknown: 'Unknown',
+    session: '5-hour limit',
+    weekly: 'Weekly limit',
+    days: 'Days at a limit',
+    unit: (n: number) => (n === 1 ? 'time' : 'times'),
+    dayUnit: (n: number) => (n === 1 ? 'day' : 'days'),
+    period: (y?: number) => (y ? String(y) : 'the last 12 months'),
+    foot: (d: string | undefined) => (d ? `Last time at a limit: ${d}` : 'Never reached a limit'),
+    chart: 'Days at a limit, by month',
+    months: ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
+  },
+  ko: {
+    title: '플랜 · 사용 한도',
+    plan: '플랜',
+    unknown: '알 수 없음',
+    session: '5시간 한도',
+    weekly: '주간 한도',
+    days: '한도에 닿은 날',
+    unit: () => '회',
+    dayUnit: () => '일',
+    period: (y?: number) => (y ? `${y}년` : '최근 12개월'),
+    foot: (d: string | undefined) => (d ? `마지막으로 한도에 닿은 날: ${d}` : '한도에 닿은 적 없음'),
+    chart: '월별 한도에 닿은 날',
+    months: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+  },
+} as const;
+
+/** Plan name plus how often the usage limits were reached. */
+export function renderLimits(limits: ReadonlyMap<DayKey, LimitHits>, opts: LimitsOptions): string {
+  const lang = opts.lang ?? 'en';
+  const t = LIMIT_TEXT[lang];
+  const showMascot = opts.mascot ?? true;
+  const endYear = Number(opts.end.slice(0, 4));
+  const endMonth = Number(opts.end.slice(5, 7));
+
+  // The 12 month buckets shown.
+  const buckets: { key: string; label: string }[] = [];
+  for (let i = 0; i < 12; i++) {
+    const y = opts.year ?? endYear;
+    const m = opts.year ? i + 1 : endMonth - 11 + i;
+    const yy = m < 1 ? y - 1 : y;
+    const mm = ((m + 11) % 12) + 1;
+    buckets.push({ key: `${yy}-${String(mm).padStart(2, '0')}`, label: t.months[mm - 1] ?? '' });
+  }
+  const first = buckets[0]?.key ?? '';
+  const last = buckets[11]?.key ?? '';
+
+  let session = 0;
+  let weekly = 0;
+  let lastDay: string | undefined;
+  const perMonth = new Map<string, number>();
+  for (const [day, h] of limits) {
+    const mk = day.slice(0, 7);
+    if (mk < first || mk > last || day > opts.end || (h.session === 0 && h.weekly === 0)) continue;
+    session += h.session;
+    weekly += h.weekly;
+    perMonth.set(mk, (perMonth.get(mk) ?? 0) + 1);
+    if (!lastDay || day > lastDay) lastDay = day;
+  }
+  const daysAt = [...perMonth.values()].reduce((a, b) => a + b, 0);
+
+  const W = 620;
+  const stats: [string, string, string][] = [
+    [t.plan, opts.plan ?? t.unknown, ''],
+    [t.session, String(session), t.unit(session)],
+    [t.weekly, String(weekly), t.unit(weekly)],
+    [t.days, String(daysAt), t.dayUnit(daysAt)],
+  ];
+  const colW = (W - 3 * 16) / 4;
+  const chartTop = 128;
+  const chartH = 64;
+  const H = chartTop + chartH + 44;
+  const maxBar = Math.max(1, ...buckets.map((b) => perMonth.get(b.key) ?? 0));
+  const title = opts.title ?? t.title;
+
+  const parts: string[] = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="lm-title">`);
+  parts.push(`<title id="lm-title">${escapeXml(title)}</title>`);
+  parts.push(`<style>${styles(opts.theme ?? 'auto')}</style>`);
+  const titleX = showMascot ? MASCOT_COLS * PIXEL + 10 : 0;
+  if (showMascot) parts.push(mascotSvg(0, 14 - (MASCOT_ROWS * PIXEL) / 2));
+  parts.push(`<text class="t" x="${titleX}" y="19">${escapeXml(title)}</text>`);
+  parts.push(`<text class="m" x="${W}" y="19" text-anchor="end">${escapeXml(t.period(opts.year))}</text>`);
+
+  stats.forEach(([label, value, unit], i) => {
+    const x = i * (colW + 16);
+    parts.push(`<rect class="l0" x="${x}" y="40" width="${colW}" height="64" rx="6"/>`);
+    parts.push(`<text class="m k" x="${x + 12}" y="60">${escapeXml(label)}</text>`);
+    parts.push(`<text class="t v" x="${x + 12}" y="90">${escapeXml(value)}${unit ? `<tspan class="m k" dx="5">${escapeXml(unit)}</tspan>` : ''}</text>`);
+  });
+
+  parts.push(`<text class="m" x="0" y="${chartTop - 8}">${escapeXml(t.chart)}</text>`);
+  const slot = W / 12;
+  buckets.forEach((b, i) => {
+    const n = perMonth.get(b.key) ?? 0;
+    const h = n === 0 ? 3 : Math.max(5, Math.round((n / maxBar) * chartH));
+    const x = i * slot + 6;
+    const y = chartTop + chartH - h;
+    parts.push(`<rect class="l${n === 0 ? 0 : n === maxBar ? 4 : 3}" x="${x}" y="${y}" width="${slot - 12}" height="${h}" rx="3"><title>${escapeXml(b.key)}: ${n}</title></rect>`);
+    if (n > 0) parts.push(`<text class="m" x="${x + (slot - 12) / 2}" y="${y - 4}" text-anchor="middle">${n}</text>`);
+    parts.push(`<text class="m" x="${x + (slot - 12) / 2}" y="${chartTop + chartH + 14}" text-anchor="middle">${escapeXml(b.label)}</text>`);
+  });
+  parts.push(`<text class="m" x="0" y="${H - 4}">${escapeXml(t.foot(lastDay))}</text>`);
   parts.push('</svg>');
   return parts.join('') + '\n';
 }

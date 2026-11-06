@@ -1,12 +1,14 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { stats } from './calendar.js';
-import { collect, dayKey, defaultClaudeDirs } from './collect.js';
+import { collect, dayKey, defaultClaudeDirs, findTranscripts } from './collect.js';
 import { collectHistory } from './history.js';
+import { accountFiles, readPlan, scanLimits } from './limits.js';
 import { loadLedger, mergeLedger, saveLedger } from './ledger.js';
-import { compact, renderProjects, renderSvg, type Lang, type Theme } from './render.js';
+import { compact, renderLimits, renderProjects, renderSvg, type Lang, type Theme } from './render.js';
 import { METRICS, metricValue, type DayKey, type Metric } from './types.js';
 
 export const VERSION = '0.1.0';
@@ -38,6 +40,9 @@ Options
       --years            Draw one chart per calendar year instead of the rolling --days chart:
                          Jan 1 to Dec 31 (to today for this year), as claude-hitmap-<year>.svg
                          (and claude-prompts-<year>.svg with --prompts)
+      --limits           Also draw your plan and how often you reached a usage limit
+                         (claude-limits.svg, or claude-limits-<year>.svg with --years)
+      --plan <name>      Plan label to show, if it cannot be detected (e.g. "Max 5x")
       --top <n>          Projects in the projects chart (default: 8)
       --no-mascot        Leave out the pixel mascot
       --full             Rescan every transcript, not only those changed since the last run
@@ -101,6 +106,8 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         lang: { type: 'string', default: 'en' },
         title: { type: 'string', default: 'Claude Code' },
         prompts: { type: 'boolean', default: false },
+        limits: { type: 'boolean', default: false },
+        plan: { type: 'string' },
         top: { type: 'string', default: '8' },
         years: { type: 'boolean', default: false },
         'no-mascot': { type: 'boolean', default: false },
@@ -157,7 +164,23 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
       const from = dayKey(since, timeZone);
       for (const k of [...scan.days.keys()]) if (k < from) scan.days.delete(k);
     }
-    ledger = mergeLedger(ledger, scan.days, now);
+    let limitScan: Map<DayKey, { session: number; weekly: number }> | undefined;
+    let plan: string | undefined;
+    if (values.limits) {
+      // The first time --limits is used on an existing ledger, nothing has been counted
+      // yet, so look at every transcript rather than only the recently changed ones.
+      const limitSince = ledger.limits ? since : undefined;
+      limitScan = await scanLimits(await findTranscripts(dirs, limitSince), timeZone);
+      if (limitSince) {
+        const from = dayKey(limitSince, timeZone);
+        for (const k of [...limitScan.keys()]) if (k < from) limitScan.delete(k);
+      }
+      plan = values.plan?.trim() || (await readPlan(accountFiles(dirs, homedir()))) || ledger.plan;
+    }
+    ledger = mergeLedger(ledger, scan.days, now, {
+      ...(limitScan ? { limits: limitScan } : {}),
+      ...(plan ? { plan } : {}),
+    });
 
     const values_ = new Map<DayKey, number>(
       Object.entries(ledger.days).map(([k, c]) => [k, metricValue(c, metric)]),
@@ -201,6 +224,12 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         const files: [string, string][] = [
           [`claude-hitmap-${year}.svg`, renderSvg(values_, { ...common, metric, title: values.title })],
         ];
+        if (values.limits) {
+          files.push([
+            `claude-limits-${year}.svg`,
+            renderLimits(new Map(Object.entries(ledger.limits ?? {})), { end: yEnd, year, ...(ledger.plan ? { plan: ledger.plan } : {}), theme, lang, mascot: !values['no-mascot'] }),
+          ]);
+        }
         if (history) {
           files.push([
             `claude-prompts-${year}.svg`,
@@ -213,6 +242,15 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         }
       }
       io.out(`Years: ${[...yearsSeen].sort().join(', ')}\n`);
+    }
+
+    if (values.limits && !values.years) {
+      await writeFile(
+        join(outDir, 'claude-limits.svg'),
+        renderLimits(new Map(Object.entries(ledger.limits ?? {})), { end, ...(ledger.plan ? { plan: ledger.plan } : {}), theme, lang, mascot: !values['no-mascot'] }),
+        'utf8',
+      );
+      extra.push('claude-limits.svg');
     }
 
     const s = stats(values_, end, days);

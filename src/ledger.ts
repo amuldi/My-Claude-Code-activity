@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { emptyCounts, type DayKey, type Ledger, type TokenCounts } from './types.js';
+import { emptyCounts, type DayKey, type LimitHits, type Ledger, type TokenCounts } from './types.js';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const FIELDS = ['input', 'output', 'cacheCreation', 'cacheRead', 'messages'] as const;
@@ -28,7 +28,20 @@ export function parseLedger(raw: unknown): Ledger {
     days[k] = c;
   }
   const lastScanAt = typeof r['lastScanAt'] === 'string' ? r['lastScanAt'] : null;
-  return { version: 1, timeZone: r['timeZone'], lastScanAt, days };
+  const ledger: Ledger = { version: 1, timeZone: r['timeZone'], lastScanAt, days };
+  const rawLimits = r['limits'];
+  if (typeof rawLimits === 'object' && rawLimits !== null) {
+    const limits: Record<DayKey, LimitHits> = {};
+    for (const [k, v] of Object.entries(rawLimits)) {
+      if (!DAY.test(k)) throw new Error(`ledger.limits has an invalid date key: ${k}`);
+      const o = (typeof v === 'object' && v !== null ? v : {}) as Record<string, unknown>;
+      const n = (x: unknown): number => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? x : 0);
+      limits[k] = { session: n(o['session']), weekly: n(o['weekly']) };
+    }
+    ledger.limits = limits;
+  }
+  if (typeof r['plan'] === 'string' && r['plan'].trim()) ledger.plan = r['plan'].trim();
+  return ledger;
 }
 
 /** Read the ledger at `path`, or start an empty one if the file does not exist. */
@@ -48,7 +61,12 @@ export async function loadLedger(path: string, timeZone: string): Promise<Ledger
  * value. Once Claude Code deletes an old transcript, a rescan sees less than
  * before; taking the maximum means history only ever grows.
  */
-export function mergeLedger(ledger: Ledger, scanned: ReadonlyMap<DayKey, TokenCounts>, scannedAt: Date): Ledger {
+export function mergeLedger(
+  ledger: Ledger,
+  scanned: ReadonlyMap<DayKey, TokenCounts>,
+  scannedAt: Date,
+  extra: { limits?: ReadonlyMap<DayKey, LimitHits>; plan?: string } = {},
+): Ledger {
   const days: Record<DayKey, TokenCounts> = { ...ledger.days };
   for (const [k, c] of scanned) {
     const prev = days[k] ?? emptyCounts();
@@ -56,7 +74,17 @@ export function mergeLedger(ledger: Ledger, scanned: ReadonlyMap<DayKey, TokenCo
     for (const f of FIELDS) next[f] = Math.max(prev[f], c[f]);
     days[k] = next;
   }
-  return { ...ledger, lastScanAt: scannedAt.toISOString(), days };
+  const merged: Ledger = { ...ledger, lastScanAt: scannedAt.toISOString(), days };
+  if (extra.limits) {
+    const limits: Record<DayKey, LimitHits> = { ...(ledger.limits ?? {}) };
+    for (const [k, h] of extra.limits) {
+      const prev = limits[k] ?? { session: 0, weekly: 0 };
+      limits[k] = { session: Math.max(prev.session, h.session), weekly: Math.max(prev.weekly, h.weekly) };
+    }
+    merged.limits = limits;
+  }
+  if (extra.plan) merged.plan = extra.plan;
+  return merged;
 }
 
 /** Write the ledger with days in date order, so diffs stay small. */
@@ -66,6 +94,15 @@ export async function saveLedger(path: string, ledger: Ledger): Promise<void> {
     const c = ledger.days[k];
     if (c) sorted[k] = c;
   }
+  const out: Record<string, unknown> = { ...ledger, days: sorted };
+  if (ledger.limits) {
+    const l: Record<DayKey, LimitHits> = {};
+    for (const k of Object.keys(ledger.limits).sort()) {
+      const h = ledger.limits[k];
+      if (h) l[k] = h;
+    }
+    out['limits'] = l;
+  }
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, JSON.stringify({ ...ledger, days: sorted }, null, 2) + '\n', 'utf8');
+  await writeFile(path, JSON.stringify(out, null, 2) + '\n', 'utf8');
 }

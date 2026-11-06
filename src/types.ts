@@ -15,6 +15,14 @@ export interface TokenCounts {
   messages: number;
 }
 
+/** Times Claude Code told the user a usage limit was reached on one day. */
+export interface LimitHits {
+  /** The 5-hour / session limit. */
+  session: number;
+  /** The weekly limit. */
+  weekly: number;
+}
+
 /**
  * The persistent history. Claude Code deletes transcripts after 30 days by
  * default, so each run merges what it finds into this file instead of
@@ -26,6 +34,10 @@ export interface Ledger {
   /** When the transcripts were last scanned (ISO time), or null if never. */
   lastScanAt: string | null;
   days: Record<DayKey, TokenCounts>;
+  /** Limit-reached notices per day; only present when collected with `--limits`. */
+  limits?: Record<DayKey, LimitHits>;
+  /** Subscription plan label, e.g. "Pro" or "Max 5x". */
+  plan?: string;
 }
 
 /** Which number each cell shows. */
