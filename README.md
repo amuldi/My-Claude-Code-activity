@@ -51,6 +51,14 @@
 
 <img src="examples/projects.svg" alt="프로젝트 막대 예시" />
 
+### ⚡ 플랜 · 한도
+
+내 **플랜**과, 5시간·주간 **사용 한도에 얼마나 자주 닿았는지**를 월별 막대로 보여 줘요.
+
+<img src="examples/limits-2026.svg" alt="플랜과 사용 한도 예시" />
+
+<sub>한도의 몇 %를 썼는지는 서버에만 있어서 알 수 없어요. 한도에 닿은 횟수와 날만 보여 줍니다.</sub>
+
 ### 🎨 그 밖에
 
 - **연도별**로 따로 만들어져요 (`2026`, `2027`, …)
@@ -82,7 +90,7 @@ npm install -g github:amuldi/ClaudeCode_HitMap
 ```bash
 git clone https://github.com/<내아이디>/<내아이디>
 cd <내아이디>
-cc-hitmap --out claude-activity --prompts --years --push
+cc-hitmap --out claude-activity --prompts --years --limits --push
 ```
 
 실행하면 이런 결과가 나와요.
@@ -102,6 +110,7 @@ Pushed.
 |---|---|
 | `claude-hitmap-2026.svg` | 2026년 토큰 잔디 |
 | `claude-prompts-2026.svg` | 2026년 프롬프트 잔디 |
+| `claude-limits-2026.svg` | 2026년 플랜 · 한도 도달 현황 |
 | `claude-projects.svg` | 프로젝트별 막대 |
 | `claude-hitmap.json` | 날짜별 숫자 장부 — **지우지 마세요** |
 
@@ -117,6 +126,8 @@ Pushed.
 ![토큰](claude-activity/claude-hitmap-2026.svg)
 
 ![프롬프트](claude-activity/claude-prompts-2026.svg)
+
+![플랜·한도](claude-activity/claude-limits-2026.svg)
 
 ![프로젝트](claude-activity/claude-projects.svg)
 ````
@@ -146,7 +157,7 @@ Pushed.
 
 ```bash
 cd <내아이디>
-cc-hitmap --out claude-activity --prompts --years --push
+cc-hitmap --out claude-activity --prompts --years --limits --push
 ```
 
 세션이 끝날 때마다 자동으로 하려면 `~/.claude/settings.json`에 훅을 추가하세요.
@@ -157,7 +168,7 @@ cc-hitmap --out claude-activity --prompts --years --push
     "SessionEnd": [
       {
         "hooks": [
-          { "type": "command", "command": "cd ~/code/<내아이디> && cc-hitmap --out claude-activity --prompts --years --push >/dev/null 2>&1 &" }
+          { "type": "command", "command": "cd ~/code/<내아이디> && cc-hitmap --out claude-activity --prompts --years --limits --push >/dev/null 2>&1 &" }
         ]
       }
     ]
@@ -168,7 +179,7 @@ cc-hitmap --out claude-activity --prompts --years --push
 하루에 한 번이면 충분하다면 cron도 돼요.
 
 ```cron
-0 23 * * *  cd ~/code/<내아이디> && cc-hitmap --out claude-activity --prompts --years --push
+0 23 * * *  cd ~/code/<내아이디> && cc-hitmap --out claude-activity --prompts --years --limits --push
 ```
 
 ## ⚙️ 옵션
@@ -177,6 +188,8 @@ cc-hitmap --out claude-activity --prompts --years --push
 |---|---|
 | `--years` | 달력 연도별 잔디를 그려요 (이 가이드의 기본) |
 | `--prompts` | 프롬프트 잔디와 프로젝트 막대도 그려요 |
+| `--limits` | 내 플랜과 사용 한도에 닿은 횟수도 그려요 |
+| `--plan "Max 5x"` | 플랜이 자동으로 안 읽힐 때 직접 지정해요 |
 | `--top 12` | 프로젝트 막대에 12개까지 (기본 8) |
 | `--lang ko` | 한글로 표기해요 |
 | `--metric output` | 출력 토큰만 세요 (`total` · `output` · `input`) |
@@ -207,7 +220,7 @@ Claude Code의 사용 기록은 서버가 아니라 **내 컴퓨터(`~/.claude`)
 <details>
 <summary><b>개인정보는 괜찮나요?</b></summary>
 
-저장소에는 **날짜별 숫자**와 **프로젝트 폴더 이름**만 올라가요. 프롬프트 내용과 코드는 읽지도 올리지도 않아요. 프로젝트 이름을 공개하고 싶지 않다면 `--prompts` 없이 실행하세요. 프로젝트 막대와 프롬프트 잔디가 빠져요.
+저장소에는 **날짜별 숫자**, **프로젝트 폴더 이름**, **플랜 이름**(Pro·Max 등)만 올라가요. 계정 파일에서 읽는 것도 플랜 이름뿐이고 이름·이메일은 읽지 않아요. 프롬프트 내용과 코드는 읽지도 올리지도 않아요. 프로젝트 이름을 공개하고 싶지 않다면 `--prompts` 없이, 플랜을 숨기고 싶다면 `--limits` 없이 실행하세요.
 
 </details>
 
