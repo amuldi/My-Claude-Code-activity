@@ -1,7 +1,7 @@
 {
   "version": 1,
   "timeZone": "Asia/Seoul",
-  "lastScanAt": "2026-11-06T14:56:56.163Z",
+  "lastScanAt": "2026-11-06T15:00:25.027Z",
   "days": {
     "2026-10-03": {
       "input": 424,
@@ -214,11 +214,18 @@
       "messages": 3
     },
     "2026-11-06": {
-      "input": 430,
-      "output": 294432,
-      "cacheCreation": 1258163,
-      "cacheRead": 37589364,
-      "messages": 207
+      "input": 438,
+      "output": 299757,
+      "cacheCreation": 1264480,
+      "cacheRead": 38075996,
+      "messages": 211
+    },
+    "2026-11-07": {
+      "input": 6,
+      "output": 3577,
+      "cacheCreation": 2049,
+      "cacheRead": 255154,
+      "messages": 2
     }
   }
 }

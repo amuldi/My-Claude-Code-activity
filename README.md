@@ -23,6 +23,19 @@
 
 ![Projects](claude-projects.svg)
 
+## 연도별로 보기
+
+GitHub처럼 달력 연도(1월 1일~12월 31일)마다 따로 봅니다. 새 해가 되면 그 해 이미지가 자동으로 추가됩니다.
+
+<details open>
+<summary><b>2026</b></summary>
+
+![2026 tokens](claude-hitmap-2026.svg)
+
+![2026 prompts](claude-prompts-2026.svg)
+
+</details>
+
 ## 내 잔디 만들기
 
 내 컴퓨터에서 한 번 실행하면 됩니다. 필요한 것은 Node 18.17 이상과 Claude Code를 쓴 기록(`~/.claude`)뿐입니다.
@@ -33,7 +46,7 @@ npm install -g github:amuldi/ClaudeCode_HitMap
 
 # 2. 이미지를 둘 저장소(이 저장소처럼)를 만들어 clone 한 뒤, 그 폴더에서 실행
 cd ~/code/My-Claude-Code-activity
-cc-hitmap --prompts --push
+cc-hitmap --prompts --years --push
 ```
 
 `claude-hitmap.svg`, `claude-prompts.svg`, `claude-projects.svg`, `claude-hitmap.json`이 만들어지고 `--push`가 커밋·푸시까지 합니다.
@@ -51,6 +64,7 @@ cc-hitmap --prompts --push
 | 옵션 | 설명 |
 |---|---|
 | `--prompts` | 프롬프트 수 잔디와 프로젝트 막대도 그립니다 |
+| `--years` | 연도별 이미지(`claude-hitmap-2026.svg` 등)도 그립니다 |
 | `--top 12` | 프로젝트 막대에 12개까지 보여줍니다 |
 | `--days 120` | 최근 120일만 보여줍니다 (기본 365) |
 | `--lang ko` | 한글로 표기합니다 |
@@ -70,7 +84,7 @@ cc-hitmap --prompts --push
     "SessionEnd": [
       {
         "hooks": [
-          { "type": "command", "command": "cc-hitmap --out ~/code/My-Claude-Code-activity --prompts --push >/dev/null 2>&1 &" }
+          { "type": "command", "command": "cc-hitmap --out ~/code/My-Claude-Code-activity --prompts --years --push >/dev/null 2>&1 &" }
         ]
       }
     ]
