@@ -88,7 +88,7 @@ Claude Code 세션이 끝날 때마다 갱신하려면 `~/.claude/settings.json`
 | `--lang <l>` | `en` | `en` · `ko` |
 | `--title <text>` | `Claude Code` | 제목 |
 | `--prompts` | | `history.jsonl`로 **프롬프트 수 잔디**(`claude-prompts.svg`)와 **프로젝트별 막대**(`claude-projects.svg`)도 그리기. 토큰 기록보다 훨씬 오래 남아 있어요 |
-| `--years` | | 달력 연도별 잔디도 그리기. 1월 1일부터 12월 31일(올해는 오늘)까지, `claude-hitmap-<연도>.svg` (`--prompts`와 같이 쓰면 `claude-prompts-<연도>.svg`도) |
+| `--years` | | 최근 N일 대신 **달력 연도별** 잔디만 그리기. 1월 1일~12월 31일(올해는 오늘까지), `claude-hitmap-<연도>.svg` (`--prompts`와 같이 쓰면 `claude-prompts-<연도>.svg`도) |
 | `--top <n>` | `8` | 프로젝트 막대에 보일 개수 (1–30) |
 | `--no-mascot` | | 픽셀 마스코트 빼기 |
 | `--full` | | 마지막 실행 이후 바뀐 기록만이 아니라 전부 다시 읽기 |

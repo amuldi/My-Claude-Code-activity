@@ -35,8 +35,9 @@ Options
       --prompts          Also draw prompts-per-day and top-projects charts from
                          history.jsonl, which reaches back further than transcripts
                          (writes claude-prompts.svg and claude-projects.svg)
-      --years            Also write one chart per calendar year, Jan 1 to Dec 31 (or to today),
-                         as claude-hitmap-<year>.svg (and claude-prompts-<year>.svg with --prompts)
+      --years            Draw one chart per calendar year instead of the rolling --days chart:
+                         Jan 1 to Dec 31 (to today for this year), as claude-hitmap-<year>.svg
+                         (and claude-prompts-<year>.svg with --prompts)
       --top <n>          Projects in the projects chart (default: 8)
       --no-mascot        Leave out the pixel mascot
       --full             Rescan every transcript, not only those changed since the last run
@@ -166,21 +167,24 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
 
     await mkdir(outDir, { recursive: true });
     await saveLedger(dataPath, ledger);
-    await writeFile(svgPath, svg, 'utf8');
+    if (!values.years) await writeFile(svgPath, svg, 'utf8');
 
     const extra: string[] = [];
     if (values.prompts) {
       const h = await collectHistory(dirs, timeZone);
       const mascot = !values['no-mascot'];
       const promptTitle = lang === 'ko' ? 'Claude Code 프롬프트' : 'Claude Code prompts';
-      await writeFile(
-        join(outDir, 'claude-prompts.svg'),
-        renderSvg(h.days, { end, days, theme, lang, title: promptTitle, mascot, unit: lang === 'ko' ? '프롬프트' : 'prompts' }),
-        'utf8',
-      );
+      if (!values.years) {
+        await writeFile(
+          join(outDir, 'claude-prompts.svg'),
+          renderSvg(h.days, { end, days, theme, lang, title: promptTitle, mascot, unit: lang === 'ko' ? '프롬프트' : 'prompts' }),
+          'utf8',
+        );
+        extra.push('claude-prompts.svg');
+      }
       const best = [...h.projects].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, top);
       await writeFile(join(outDir, 'claude-projects.svg'), renderProjects(best, { theme, lang, mascot, total: [...h.projects.values()].reduce((a, b) => a + b, 0) }), 'utf8');
-      extra.push('claude-prompts.svg', 'claude-projects.svg');
+      extra.push('claude-projects.svg');
       io.out(`History: ${[...h.days.values()].reduce((a, b) => a + b, 0)} prompts on ${h.days.size} days, ${h.projects.size} projects.\n`);
     }
 
@@ -217,11 +221,11 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
         `Scanned ${scan.files} transcript${scan.files === 1 ? '' : 's'}${since ? ' changed since the last run' : ''}.`,
         `Ledger: ${Object.keys(ledger.days).length} days (${dataPath})`,
         `Last ${days} days: ${compact(s.total)} ${metric} tokens · ${s.activeDays} active days · longest streak ${s.longestStreak}`,
-        `Wrote ${svgPath}`,
+        ...(values.years ? [] : [`Wrote ${svgPath}`]),
         '',
       ].join('\n'),
     );
-    if (values.push) pushFiles(outDir, [values.svg, values.data, ...extra], io);
+    if (values.push) pushFiles(outDir, [...(values.years ? [] : [values.svg]), values.data, ...extra], io);
     return 0;
   } catch (e) {
     if (e instanceof UsageError) {
