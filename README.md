@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🟧 Claude Code Activity
+# Claude Code Activity
 
 **내 Claude Code 사용량을 GitHub 잔디처럼, 프로필 README에.**
 
@@ -23,23 +23,8 @@ README에 바로 넣을 수 있는 SVG 이미지로 그려 주는 CLI 도구 `cc
 
 <br>
 
-[**사용한 기술**](#-사용한-기술) · [**어떻게 나오나**](#-어떻게-나오나) · [**빠른 시작**](#-빠른-시작) · [**자동 갱신**](#-자동-갱신) · [**옵션**](#%EF%B8%8F-옵션) · [**어떻게 세나요**](#-어떻게-세나요) · [**FAQ**](#-faq) · [**개발**](#%EF%B8%8F-개발)
 
-</div>
 
-<br>
-
-## 🧰 사용한 기술
-
-<p>
-<img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript strict">
-<img src="https://img.shields.io/badge/Node.js-CLI-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js CLI">
-<img src="https://img.shields.io/badge/SVG-Renderer-FFB13B?style=for-the-badge&logo=svg&logoColor=black" alt="SVG renderer">
-<img src="https://img.shields.io/badge/node:test-46%20tests-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="node:test">
-<img src="https://img.shields.io/badge/GitHub%20Actions-Node%2018·20·22-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions">
-<img src="https://img.shields.io/badge/Claude%20Code-Hooks-D97757?style=for-the-badge&logo=claude&logoColor=white" alt="Claude Code hooks">
-<img src="https://img.shields.io/badge/Git-auto%20push-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git auto push">
-</p>
 
 | | |
 |---|---|
